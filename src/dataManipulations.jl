@@ -35,6 +35,10 @@ function dataMatrix(data, lags, typ)
 	typ=="Trend" && return([1:(obs-lags) data])
 end
 
+# __ Auxilary functions
+
+eye(k) = Matrix(I, k, k)
+
 #
 ######
 #

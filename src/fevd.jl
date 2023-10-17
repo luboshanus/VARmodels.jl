@@ -1,3 +1,5 @@
+using FFTW
+
 function fevd(estimate::VARRepresentation, H)
 	Psi(estimate, H)
 	FEVD = [sum(estimate.Psi[i,j,:].^2) for i=1:estimate.vars, j=1:estimate.vars]
@@ -13,8 +15,9 @@ function genFEVD(estimate::VARRepresentation, H::Int; nocorr = false)
 	K = estimate.vars
 
 	den = zeros(size(A)[1])
-	num = zeros(A[:,:,1])
-	
+	# num = zeros(A[:,:,1])
+    num = zeros(size(A[:,:,1]))
+
 	if nocorr
 		Σ = diagm(diag(deepcopy(estimate.Σ)))
 	end
@@ -25,7 +28,7 @@ function genFEVD(estimate::VARRepresentation, H::Int; nocorr = false)
 		den += diag(z*t)
 		num += z.^2
 	end
-	
+
 	θ = [num[i,j]/(den[i]*Σ[j,j]) for i=1:K, j=1:K]
 	for i=1:K
 		θ[i,:] = θ[i,:]/sum(θ[i,:])
@@ -48,18 +51,19 @@ function fftFEVD(estimate::VARRepresentation, H; nocorr = false, range = nothing
 		Σ = estimate.Σ
 	end
 
-	P = chol(Σ)
+	# P = chol(Σ)
+    P = cholesky(Σ).U
 
 	if !(typeof(range) <: Tuple)
 		range[1] = 1
 		range[2] = H
 	end
 
-	ft = mapslices(fft, estimate.Phi, [3])
+	ft = mapslices(fft, estimate.Phi, dims=[3])
 	decomp = [(abs(ft[:,i,z]'*P'[:,j]).^2)[1] / H for i=1:k, j = 1:k, z = 1:H]
-	denom = mapslices(sum, decomp[:,:,range[1]:range[2]], [3, 2])
+	denom = mapslices(sum, decomp[:,:,range[1]:range[2]], dims=[3, 2])
 
-	return  mapslices((x) -> x./denom[:,:,1], decomp, [1,2])
+	return  mapslices((x) -> x./denom[:,:,1], decomp, dims=[1,2])
 end
 
 function fftGenFEVD(estimate::VARRepresentation, H; nocorr = false, range = nothing)
@@ -73,8 +77,9 @@ function fftGenFEVD(estimate::VARRepresentation, H; nocorr = false, range = noth
 		Σ = estimate.Σ
 	end
 
-	P = convert(Array{Float64,2}, chol(Σ))
-	ft = mapslices(fft, estimate.Phi, [3])
+	# P = convert(Array{Float64,2}, chol(Σ))
+    P = cholesky(Σ).U
+	ft = mapslices(fft, estimate.Phi, dims=[3])
 	decompNew = zeros(k,k,H)
 	for i=1:k
 		temp = ft[:,i,:]
@@ -98,9 +103,9 @@ function fftGenFEVD(estimate::VARRepresentation, H; nocorr = false, range = noth
 
 	if !(typeof(range) <: Tuple)
 		range = [1,H]
-	end		
+	end
 
-	denom = vec(mapslices(sum, decomp[:,:,range[1]:range[2]], [3, 2]))
+	denom = vec(mapslices(sum, decomp[:,:,range[1]:range[2]], dims=[3, 2]))
 
 	θ = [decompNew[i,j,h]/(denom[i]*Σ[j,j]) for i=1:k, j = 1:k, h = 1:H]
 
@@ -114,4 +119,35 @@ function fftGenFEVD(estimate::VARRepresentation, H; nocorr = false, range = noth
 	end
 
 	return θ
+end
+
+
+# __ new persistence functions
+function fftPers(estimate::VARRepresentation, H; nocorr = false, range = nothing)
+	k = estimate.vars
+
+	Phi(estimate, H)
+
+	if nocorr
+		Σ = diagm(diag(deepcopy(estimate.Σ)))
+	else
+		Σ = estimate.Σ
+	end
+
+	# P = chol(Σ)
+    P = cholesky(Σ).U
+
+	if !(typeof(range) <: Tuple)
+		range[1] = 1
+		range[2] = H
+	end
+
+	ft = mapslices(fft, estimate.Phi, dims=[3])
+    decomp = [(real.(ft[:,i,z])'*P'[:,j])[1] / H for i=1:k, j = 1:k, z = 1:H]
+    # decomp_fr = [(real.(ft[:,i,z]'*P'[:,j]))[1] / H for i=1:k, j = 1:k, z = 1:H]
+
+	# decomp = [(abs(ft[:,i,z]'*P'[:,j]).^2)[1] / H for i=1:k, j = 1:k, z = 1:H]
+	# denom = mapslices(sum, decomp[:,:,range[1]:range[2]], dims=[3, 2])
+	# return  mapslices((x) -> x./denom[:,:,1], decomp, dims=[1,2])
+    return decomp
 end

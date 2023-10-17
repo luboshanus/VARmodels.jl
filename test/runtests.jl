@@ -1,9 +1,10 @@
 using VARmodels
-using Base.Test
+using Test
 
 # write your own tests here
 i = rand(1:2000)
 run(`Rscript varest.R $i`)
+# run(`Rscript varest.R`)
 C = readcsv("coefs.csv")
 S = readcsv("sigma.csv")
 resids = readcsv("residuals.csv")

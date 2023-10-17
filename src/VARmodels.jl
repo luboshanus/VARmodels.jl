@@ -12,54 +12,57 @@
 # - Analytical plots using the PyPlot library
 # - Automatic selection using information criteria (or at least giving table with the numbers)
 # - Macro language for the restricted VAR using the GLS.
-
-
 module VARmodels
-	using Formatting
-	using Distributions
 
-	abstract VARRepresentation
+using CSV
+using DataFrames
+using Dates
+using Distributions
+using Formatting
+using LinearAlgebra
+using TimeSeries
 
-	include("dataManipulations.jl")
-	include("VAR.jl")
-	include("restrictions.jl")
-	include("bindings.jl")
-	include("fevd.jl")
-	include("plots.jl")
-	include("cointegrationJohansen.jl")
+include("dataManipulations.jl")
+include("VAR.jl")
+include("restrictions.jl")
+include("bindings.jl")
+include("fevd.jl")
+include("plots.jl")
+include("cointegrationJohansen.jl")
 
-	# Main VAR machinery
-	export 
-		varEstimate,
-		varEstimateShrink,
-		Psi,
-		restrictVAR,
-		restrictVAR2,
-		getR,
-		Phi
+# Main VAR machinery
+export
+    varEstimate,
+    varEstimateShrink,
+    Psi,
+    restrictVAR,
+    restrictVAR2,
+    getR,
+    Phi
 
-	# Main VECM machinery
-	export
-		cointegrationJohansen,
-		johansenTeststat,
-		CointegrationEstimate,
-		getVARrepresentation,
-		varRepresentationVECM
+# Main VECM machinery
+export
+    cointegrationJohansen,
+    johansenTeststat,
+    CointegrationEstimate,
+    getVARrepresentation,
+    varRepresentationVECM
 
-	# FEVD functions
-	export 
-		fevd,
-		genFEVD,
-		fftFEVD,
-		fftGenFEVD
+# FEVD functions
+export
+    fevd,
+    genFEVD,
+    fftFEVD,
+    fftGenFEVD,
+    fftPers
 
-	# Simulation functions
-	export
-		simulateVAR
+# Simulation functions
+export
+    simulateVAR
 
-	# Plotting
-	export
-		plotIRF
+# Plotting
+export
+    plotIRF
 
 
 end # module

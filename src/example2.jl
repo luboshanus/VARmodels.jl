@@ -1,5 +1,5 @@
 #
-# # Example with VAR as in Sims (1980)
+# # Example with VAR as in Sims (1980) IRF and FEVD
 #
 # include("src/VARmodels.jl")
 import Pkg;
@@ -9,6 +9,7 @@ using VARmodels
 using CSV, DataFrames, Dates
 using LinearAlgebra
 using TimeSeries
+using FFTW
 
 # _ using revise to reload changes in functions when developing pkg
 using Revise
@@ -23,9 +24,27 @@ data_var = TimeArray(d, Matrix(data[45:end, 2:end]) .* 1.0, names_data)
 DataFrame(data_var) |> describe
 
 s = varEstimate(data_var["cpi", "imports", "unemp"], 3, "Const")
+typeof(s)
 
-# Series: ....
-# Lags: ....
-# Type: ....
+horz = 100
+Phi(s, horz)
+Psi(s, horz)
 
-# No restrictions imposed. Estimated by OLS.
+fevd(s, horz)
+genFEVD(s, horz)
+fftFEVD(s, horz; range = (3,10))
+gf = fftGenFEVD(s, horz; range = (3,10))
+
+[fevd(s, h) for h in 1:horz]
+[genFEVD(s, h) for h in 1:horz]
+
+
+# _ new stuff
+fr = fftPers(s, 100; range = (1,horz))
+
+
+using Plots
+
+plot(fr[1,1,:])
+
+plot(gf[1,1,:])

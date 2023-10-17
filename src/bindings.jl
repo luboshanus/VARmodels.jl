@@ -1,7 +1,7 @@
 import TimeSeries: TimeArray
 
 function varEstimate(data::TimeArray{Float64}, lags::Int, typ::AbstractString)
-	t = varEstimate(data.values, lags, typ)
-	t.seriesNames = data.colnames
+	t = varEstimate(values(data), lags, typ)
+	t.seriesNames = string.(colnames(data))
 	return t
 end

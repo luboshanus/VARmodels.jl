@@ -8,6 +8,8 @@ This package allows to fit various autoregressive models. So far it only knows s
 
 First, read in some data, I am using for example Realized Volatilities from [here](http://realized.oxford-man.ox.ac.uk/data/download) with removed headers.
 
+Edit, some data of indices 'rv_dataset' originally from the link above which is no longer maintained and available.
+
 ````julia
 data = readcsv("data.csv")
 

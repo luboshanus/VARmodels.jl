@@ -1,11 +1,11 @@
-# This script should eventually become a ultimate copy of the all encompasing 
+# This script should eventually become a ultimate copy of the all encompasing
 # textbook on multivariate time-series: Lütkepohl (2007). Some of the methods will be added
-# from other papers, such as generalised VAR structure from Pesaran, Shin or computing 
+# from other papers, such as generalised VAR structure from Pesaran, Shin or computing
 # all reorderings in the standard identification structure.
 
 #
 ###### Definition of the specialised type
-# 
+#
 
 # The definition of the type rests on several specific neccessities
 # There are things that are neccessary for proper definition of the VAR model and as
@@ -14,15 +14,17 @@
 # Other things can be foregone, but are often desirable to be stored, because they are
 # computationally intensive and computing them only once is typically much better than
 # recomputing them every time. However, in many applications, one might not even need them.
-# 
+#
 # It is neccessary to balance the needs and strike the balance between initial speed of
 # estimation and future speed. For example, I probably wouldn't like to have bootstrapped
 # confidence intervals for some things, but I would surely keep the possibility to have them.
-# 
-# Moreover, the current estimation technique will probably be replaced by the method from 
+#
+# Moreover, the current estimation technique will probably be replaced by the method from
 # function restrictVAR2, because it is more general.
 
 import Base: show
+
+abstract type VARRepresentation end
 
 function estimateVAR(data::Matrix{Float64}, lags::Int, typ::String)
 	X = dataMatrix(data, lags, typ)
@@ -58,7 +60,7 @@ function estimateVARShrinkage(data::Matrix{Float64}, lags::Int, typ::String, λ:
 	return (X, Y, obs, vars, C, Σ, ntyp)
 end
 
-type varEstimate <: VARRepresentation
+mutable struct varEstimate <: VARRepresentation
 	lags::Int
 	typ::String
 	ntyp::Int
@@ -76,11 +78,11 @@ type varEstimate <: VARRepresentation
 
 	function varEstimate(data::Matrix{Float64},lags::Int, typ::String)
 		(X, Y, obs, vars, C, Σ, ntyp) = estimateVAR(data::Matrix{Float64},lags::Int,typ::String)
-		new(lags, typ, ntyp, vars, obs, X, Y, C, Σ, 0, 0, zeros(vars,vars,1), zeros(vars,vars,1), ["" for i=1:vars])
+		new(lags, typ, ntyp, vars, obs, X, Y, C, Σ, 0, 0, zeros(vars,vars,1), zeros(vars,vars,1), ["" for i in 1:vars])
 	end
 end
 
-type varEstimateShrink <: VARRepresentation
+struct varEstimateShrink <: VARRepresentation
 	lags::Int
 	typ::String
 	ntyp::Int
@@ -99,7 +101,7 @@ type varEstimateShrink <: VARRepresentation
 
 	function varEstimateShrink(data::Matrix{Float64},lags::Int, typ::String, λ)
 		(X, Y, obs, vars, C, Σ, ntyp) = estimateVARShrinkage(data::Matrix{Float64},lags::Int,typ::String, λ)
-		new(lags, typ, ntyp, vars, obs, X, Y, C, Σ, 0, 0, zeros(vars,vars,1), zeros(vars,vars,1), ["" for i=1:vars], λ)
+		new(lags, typ, ntyp, vars, obs, X, Y, C, Σ, 0, 0, zeros(vars,vars,1), zeros(vars,vars,1), ["" for i in 1:vars], λ)
 	end
 end
 
@@ -110,7 +112,7 @@ function Clag(est::VARRepresentation, lag)
 	(coefs, vars) = size(C)
 	lags = (coefs-ntyp)/vars
 	@assert lags >= lag "The demanded lag is higher than existing"
-	return C[1+ntyp+(((lag-1)*vars):((lag)*vars-1)),:]
+	return C[1 .+ ntyp .+ (((lag-1)*vars):((lag)*vars-1)),:]
 end
 
 function λ(est::VARRepresentation)
@@ -132,7 +134,7 @@ function getR(a::Matrix{Bool})
 	mat = fill(0.0, b, c)
 	a = vec(a)
 	d=1
-	for i=1:b
+	for i in 1:b
 		if a[i]
 			mat[i,:] = [fill(0.0, d-1), 1, fill(0.0, c-d)]
 			d += 1
@@ -152,7 +154,7 @@ function restrictVAR(est::varEstimate, restrictions::Expr, egls::Bool=false)
 	# The matrix R as the argument has to be of the size of the coefficients
 	# Y stay the same
 
-	# Naming conventions, this does not eat up memory, it is just renaming for more readability, 
+	# Naming conventions, this does not eat up memory, it is just renaming for more readability,
 	# it is parsed out
 	Z = est.X'
 	Y = est.Y
@@ -184,7 +186,7 @@ function restrictVAR2(est::varEstimate, R::Matrix{Bool}, egls::Bool=false)
 	# The matrix R as the argument has to be of the size of the coefficients
 	# Y stay the same
 
-	# Naming conventions, this does not eat up memory, it is just renaming for more readability, 
+	# Naming conventions, this does not eat up memory, it is just renaming for more readability,
 	# it is parsed out
 	Z = est.X'
 	Y = est.Y
@@ -194,7 +196,7 @@ function restrictVAR2(est::varEstimate, R::Matrix{Bool}, egls::Bool=false)
 	k = est.obs-est.lags
 
 	# Temporary restriction to restrict betas only to 0
-	r = fill(0.0, prod(size(R))) 
+	r = fill(0.0, prod(size(R)))
 
 	z = vec(Y) - kron(eye(K), Z')*r
 	R = getR(R')
@@ -214,12 +216,12 @@ end
 
 # Nejde rychlejc, zkusil jsem spoustu možností včetně prealokací
 function Phi(estimate::VARRepresentation, H)
-	phi = zeros(estimate.vars, estimate.vars, H)
+	phi = zeros(Float64, estimate.vars, estimate.vars, H)
 	phi[:,:,1] = eye(estimate.vars)
 
-	for j=2:H
+	for j in 2:H
 		k = j > estimate.lags ? estimate.lags + 1 : j
-		for i=1:(k-1)
+		for i in 1:(k-1)
 			phi[:,:,j] += phi[:,:,j-i]*Clag(estimate, i)
 		end
 	end
@@ -231,8 +233,9 @@ end
 function Psi(estimate::VARRepresentation, H)
 	Phi(estimate, H)
 	psi = deepcopy(estimate.Phi)
-	P = chol(estimate.Σ)
-	for i=1:H
+	# P = chol(estimate.Σ)
+    P = cholesky(estimate.Σ).U
+	for i in 1:H
 		psi[:,:,i] = P*psi[:,:,i]
 	end
 	estimate.Psi = psi
@@ -265,24 +268,24 @@ function show(io::IO, a::VARRepresentation)
 
 	if (a.typ == "Const") || (a.typ == "Trend")
 		println(io, a.typ)
-		println(io, mapslices((x)->join(x, "\n"), mapslices((x)->join(x, "  "), map((x)->format(x, precision = 2, signed = true), a.C[1:1,:]), [2]), [1])[1,1])
+		println(io, mapslices((x)->join(x, "\n"), mapslices((x)->join(x, "  "), map((x)->format(x, precision = 2, signed = true), a.C[1:1,:]), dims=[2]), dims=[1])[1,1])
 	elseif a.typ == "Const and trend"
 		println(io, a.typ)
-		println(io, mapslices((x)->join(x, "\n"), mapslices((x)->join(x, "  "), map((x)->format(x, precision = 2, signed = true), a.C[e:2,:]), [2]), [1])[1,1])
+		println(io, mapslices((x)->join(x, "\n"), mapslices((x)->join(x, "  "), map((x)->format(x, precision = 2, signed = true), a.C[e:2,:]), dims=[2]), dims=[1])[1,1])
 	end
 
-	for i=1:a.lags
+	for i in 1:a.lags
 		println(io, line)
 		print(io,"Lag ")
 		println(io, i)
 		println(io, line)
-		println(io, mapslices((x)->join(x, "\n"), mapslices((x)->join(x, "  "), map((x)->format(x, precision = 2, signed = true), Clag(a,i)), [2]), [1])[1,1])
+		println(io, mapslices((x)->join(x, "\n"), mapslices((x)->join(x, "  "), map((x)->format(x, precision = 2, signed = true), Clag(a,i)), dims=[2]), dims=[1])[1,1])
 	end
 end
 
 function simulateVAR(estimate::VARRepresentation, N, burnout=1000)
 	exogen = zeros((N+burnout, estimate.vars))
-	for i=1:(N + burnout)
+	for i in 1:(N + burnout)
 		if estimate.typ == "None"
 			exogen[i, :] = zeros(size(estimate.C)[2])
 		elseif estimate.typ == "Const"
@@ -300,9 +303,9 @@ function simulateVAR(Σ, Π, exogen, N, burnout=1000)
 	d = MvNormal(Σ)
 	errors = rand(d, N+burnout)
 	simulation = zeros((N+burnout, size(Σ)[1]))
-	for i=(size(Π)[1]+1):(N + burnout)
+	for i in (size(Π)[1]+1):(N + burnout)
 		simulation[i, :] = exogen[i, :]
-		for j=1:(size(Π)[1])
+		for j in 1:(size(Π)[1])
 			simulation[i, :] += Π'[j] * simulation[i-j,:]
 		end
 		simulation[i, :] += errors[:, i]

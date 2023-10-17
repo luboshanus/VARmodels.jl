@@ -1,6 +1,8 @@
+# __
+
 function criticalValues(ecdet, typ)
 	if ecdet=="none"
-		cvals = [6.5, 12.91, 18.9, 24.78, 30.84, 36.25, 42.06, 48.43, 54.01, 59, 65.07, 8.18, 14.9, 21.07, 27.14, 33.32, 39.43, 44.91, 51.07, 57, 62.42, 68.27, 11.65, 19.19, 25.75, 32.14, 38.78, 44.59, 51.3, 57.07, 63.37, 68.61, 74.36, 6.5, 15.66, 28.71, 45.23, 66.49, 85.18, 118.99, 151.38, 186.54, 226.34, 269.53, 8.18, 17.95, 31.52, 48.28, 70.6, 90.39, 124.25, 157.11, 192.84, 232.49, 277.39, 11.65, 23.52, 37.22, 55.43, 78.87, 104.2, 136.06, 168.92, 204.79, 246.27, 292.65]		
+		cvals = [6.5, 12.91, 18.9, 24.78, 30.84, 36.25, 42.06, 48.43, 54.01, 59, 65.07, 8.18, 14.9, 21.07, 27.14, 33.32, 39.43, 44.91, 51.07, 57, 62.42, 68.27, 11.65, 19.19, 25.75, 32.14, 38.78, 44.59, 51.3, 57.07, 63.37, 68.61, 74.36, 6.5, 15.66, 28.71, 45.23, 66.49, 85.18, 118.99, 151.38, 186.54, 226.34, 269.53, 8.18, 17.95, 31.52, 48.28, 70.6, 90.39, 124.25, 157.11, 192.84, 232.49, 277.39, 11.65, 23.52, 37.22, 55.43, 78.87, 104.2, 136.06, 168.92, 204.79, 246.27, 292.65]
 	elseif ecdet=="const"
 		cvals = [7.52, 13.75, 19.77, 25.56, 31.66, 37.45, 43.25, 48.91, 54.35, 60.25, 66.02, 9.24, 15.67, 22, 28.14, 34.4, 40.3, 46.45, 52, 57.42, 63.57, 69.74, 12.97, 20.2, 26.81, 33.24, 39.79, 46.82, 51.91, 57.95, 63.71, 69.94, 76.63, 7.52, 17.85, 32, 49.65, 71.86, 97.18, 126.58, 159.48, 196.37, 236.54, 282.45, 9.24, 19.96, 34.91, 53.12, 76.07, 102.14, 131.7, 165.58, 202.92, 244.15, 291.4, 12.97, 24.6, 41.07, 60.16, 84.45, 111.01, 143.09, 177.2, 215.74, 257.68, 307.64]
 	elseif ecdet=="trend"
@@ -26,7 +28,7 @@ function cointegrationJohansen(data, ecdet, K, spec; season = "no", dumvar = "no
 	season == "no" ? s = 0 : s = season - 1
 	@assert N * P > P + s * P + K * P^2 + P * (P + 1)/2 "Insufficient degrees of freedom."
 
-	
+
 	@assert ecdet in ["none"; "const"; "trend"] "Unsupported structure of equation, ecdet must be one of: none, const, trend"
 	@assert spec in ["longrun"; "transitory"] "Specification of equation not supported, spec must be one of longrun, transitory"
 
@@ -51,7 +53,7 @@ function cointegrationJohansen(data, ecdet, K, spec; season = "no", dumvar = "no
     Z = lagData(vcat(mapslices(x->diff(x), data, [1]), zeros(P)'), K, N)
     Z0 = Z[:, 1:P]
 
-    
+
     spec == "longrun" ? Lnotation = K : Lnotation = 1
 
     if (ecdet == "none") && (spec == "longrun")
@@ -180,7 +182,7 @@ function johansenTeststat(cointEst, typ)
 		cvals = []
 	else
 		cvals = criticalValues(cointEst.ecdet, typ)
-	end	
+	end
 
 	if typ == "trace"
     	teststat = reverse(map(x -> -N * sum(log(1-sort(cointEst.λ, rev = true)[x:P])), idx + 1))
@@ -190,7 +192,7 @@ function johansenTeststat(cointEst, typ)
     return (teststat, cvals)
 end
 
-type CointegrationEstimate
+struct CointegrationEstimate
 	data::Matrix{Float64}
 	Z0::Matrix{Float64}
 	Z1::Matrix{Float64}
@@ -250,14 +252,14 @@ function getVARrepresentation(cointObject, r::Int)
 	end
 	if cointObject.dumvar != "no"
 		d = size(cointObject.dumvar)[2]
-		coefs_from_coeffs = coeffs[(r+a+s) + 1:d, :] 
+		coefs_from_coeffs = coeffs[(r+a+s) + 1:d, :]
 		detcoeffs = vcat(detcoeffs, coefs_from_coeffs)
 	else
 		d = 0
 	end
 
 	detcoeffs = detcoeffs'
-	
+
 	lags = N-size(cointObject.ZK)[1]
 	Γ = coeffs[((-(lags-1)*vars+1):0)+size(coeffs)[1],:]'
 	A = zeros(vars, vars, lags)
@@ -282,14 +284,14 @@ function getVARrepresentation(cointObject, r::Int)
 	Y = (cointObject.data)[(lags+1):size(cointObject.data)[1],:]
 	C = vcat(detcoeffs, vcat([A[:,:,i]' for i=1:size(A)[3]]...))
 	X = hcat(determin_data, data)
-	
+
 	resids = Y - X * C
 
-	Σ = cov(resids)*(N-1)/(N-lags*vars-size(detcoeffs)[1]) 
+	Σ = cov(resids)*(N-1)/(N-lags*vars-size(detcoeffs)[1])
 	return (lags, size(detcoeffs)[1], vars, N, X, Y, C, Σ)
 end
 
-type varRepresentationVECM <: VARRepresentation
+struct varRepresentationVECM <: VARRepresentation
 	lags::Int
 	typ::AbstractString
 	ntyp::Int
