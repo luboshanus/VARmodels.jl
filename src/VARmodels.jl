@@ -31,38 +31,19 @@ include("plots.jl")
 include("cointegrationJohansen.jl")
 
 # Main VAR machinery
-export
-    varEstimate,
-    varEstimateShrink,
-    Psi,
-    restrictVAR,
-    restrictVAR2,
-    getR,
-    Phi
+export varEstimate, varEstimateShrink, Psi, restrictVAR, restrictVAR2, getR, Phi
 
 # Main VECM machinery
-export
-    cointegrationJohansen,
-    johansenTeststat,
-    CointegrationEstimate,
-    getVARrepresentation,
-    varRepresentationVECM
+export cointegrationJohansen,
+    johansenTeststat, CointegrationEstimate, getVARrepresentation, varRepresentationVECM
 
 # FEVD functions
-export
-    fevd,
-    genFEVD,
-    fftFEVD,
-    fftGenFEVD,
-    fftPers
+export fevd, genFEVD, fftFEVD, fftGenFEVD, fftPers
 
 # Simulation functions
-export
-    simulateVAR
+export simulateVAR
 
 # Plotting
-export
-    plotIRF
-
+export plotIRF
 
 end # module
