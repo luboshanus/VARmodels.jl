@@ -30,8 +30,8 @@ horz = 100
 Phi(s, horz)
 Psi(s, horz)
 
-fevd(s, horz)
-genFEVD(s, horz)
+fevd(s, 1)
+genFEVD(s, 1)
 fftFEVD(s, horz; range = (3,10))
 gf = fftGenFEVD(s, horz; range = (3,10))
 
